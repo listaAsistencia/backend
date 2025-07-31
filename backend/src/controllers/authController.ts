@@ -67,7 +67,7 @@ if(!ishash){
     process.env.JWT_SECRET!,
     { expiresIn: '1d' }
   );
-  res.json({ success: true, token, role: user.role, name:user.name, message: "Inicio de sesión exitoso" });
+  res.json({ success: true, token, role: user.role, name:user.name, email:user.email, message: "Inicio de sesión exitoso" });
 }catch(error){
     console.error(error);
     res.status(500).json({
