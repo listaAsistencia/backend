@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../utils/db';
 
 export const changePassword = async (req: Request, res: Response) => {
     try {
@@ -64,7 +62,5 @@ export const changePassword = async (req: Request, res: Response) => {
             success: false,
             message: 'Error interno del servidor'
         });
-    } finally {
-        await prisma.$disconnect();
     }
 };
