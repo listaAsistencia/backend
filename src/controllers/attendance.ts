@@ -13,10 +13,11 @@ interface Attendance {
 
 const setStudentAttendance = async (student: Student, attendanceDate: Date) => {
   try {
+    const parsedId = Number(student.id);
     if (student.isPresent) {
       await prisma.user.update(
         {
-          where: { id: student.id },
+          where: { id: parsedId },
           data: { attendances: { increment: 1 } }
         }
       )
@@ -25,7 +26,7 @@ const setStudentAttendance = async (student: Student, attendanceDate: Date) => {
         {
           data: {
             date: attendanceDate,
-            studentId: student.id
+            studentId: parsedId
           }
         }
       )

@@ -18,11 +18,12 @@ export const login = async (req: Request, res: Response) => {
 
   const user = await prisma.user.findUnique({ where: { email:mail },
   select:{
-    id: true,
+        id: true,
         email: true,
         password: true,
         role: true,
-        name: true
+        name: true,
+        attendances: true
   }
   });
   if (!user) {
@@ -65,7 +66,7 @@ if(!ishash){
     process.env.JWT_SECRET!,
     { expiresIn: '1d' }
   );
-  res.json({ success: true, token, role: user.role, name:user.name, email:user.email, message: "Inicio de sesión exitoso" });
+  res.json({ success: true, token, id: user.id, role: user.role, name:user.name, email:user.email, attendances: user.attendances, message: "Inicio de sesión exitoso" });
 }catch(error){
     console.error(error);
     res.status(500).json({
