@@ -64,7 +64,7 @@ if(!ishash){
   const token = jwt.sign(
     { id: user.id, role: user.role },
     process.env.JWT_SECRET!,
-    { expiresIn: '1d' }
+    { expiresIn: '15m' }
   );
   res.json({ success: true, token, id: user.id, role: user.role, name:user.name, email:user.email, attendances: user.attendances, message: "Inicio de sesión exitoso" });
 }catch(error){
