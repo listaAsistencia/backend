@@ -68,8 +68,8 @@ export const sendCode = async (req: Request, res: Response) => {
 
 export const verifyCode = async (req: Request, res: Response) => {
   const { email, code } = req.body;
-  if (!email || !code)
-    return res.status(400).json({ success: false, message: 'Datos incompletos' });
+  if (!email||!code)
+    return res.status(400).json({ success: false, message: 'Contenido faltante' });
 
   try {
     const stored = verificationCodes.get(email);
