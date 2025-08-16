@@ -2,124 +2,90 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../utils/db';
-import { transporter } from '../config/mailer';
+import { sendMail } from '../config/mailer';
+
 const verificationCodes = new Map<string, { code: string; expiresAt: number }>();
-
 export const login = async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  if (!email || !password)
+    return res.status(400).json({ success: false, message: 'Credenciales requeridas' });
+
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        error: "Email y contraseña obligatorios",
-        message: "Proporciona tu email y contraseña"
-      });
-    }
-
-    const mail = email.trim().toLowerCase();
-
     const user = await prisma.user.findUnique({
-      where: { email: mail },
-      select: {
-        id: true,
-        email: true,
-        password: true,
-        role: true,
-        name: true,
-        attendances: true
-      }
+      where: { email: email.trim().toLowerCase() },
     });
+    if (!user)
+      return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'Usuario no encontrado',
-        message: "Usuario inexistente con dicho email"
-      });
-    }
-
-    const isHash = user.password.startsWith('$2');
-    let validPassword = isHash
+    const validPassword = user.password.startsWith('$2')
       ? await bcrypt.compare(password, user.password)
       : password === user.password;
 
-    if (!validPassword) {
-      return res.status(401).json({
-        success: false,
-        error: 'Contraseña incorrecta',
-        message: "La contraseña ingresada no es válida"
-      });
-    }
+    if (!validPassword)
+      return res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET!,
+      { expiresIn: '15m' }
+    );
 
-    if (!isHash) {
-      const hashed = await bcrypt.hash(user.password, 10);
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { password: hashed }
-      });
-    }
+    return res.json({
+      success: true,
+      token,
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      email: user.email,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: 'Error del servidor' });
+  }
+};
+export const sendCode = async (req: Request, res: Response) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ success: false, message: 'Email requerido' });
+
+  try {
+    const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+    if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 5 * 60 * 1000;
-    verificationCodes.set(user.email, { code, expiresAt });
+    verificationCodes.set(user.email, { code, expiresAt: Date.now() + 300000 });
 
-    // Enviar código por email
-    await transporter.sendMail({
-      from: `"Sistema de Asistencias" <${process.env.EMAIL_USER}>`,
+    await sendMail({
       to: user.email,
       subject: 'Código de verificación',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2563eb;">Código de verificación</h2>
-          <p>Tu código para iniciar sesión es:</p>
-          <div style="font-size: 24px; font-weight: bold; margin: 20px 0; color: #2563eb;">${code}</div>
-          <p>Este código expirará en 5 minutos.</p>
-        </div>
-      `
+      html: `<p>Tu código es: <b>${code}</b>. Expira en 5 minutos.</p>`,
     });
 
-    res.json({
-      success: true,
-      message: "Código enviado a tu correo. Verifícalo para continuar."
-    });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      error: 'error de servidor',
-      message: "Ocurrió un error interno. Inténtalo de nuevo"
-    });
+    return res.json({ success: true, message: 'Código enviado' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: 'Error del servidor' });
   }
 };
 
 export const verifyCode = async (req: Request, res: Response) => {
+  const { email, code } = req.body;
+  if (!email || !code)
+    return res.status(400).json({ success: false, message: 'Datos incompletos' });
+
   try {
-    const { email, code } = req.body;
-
-    if (!email || !code) {
-      return res.status(400).json({ message: 'Email y código son requeridos' });
+    const stored = verificationCodes.get(email);
+    if (!stored || stored.code !== code) {
+      return res.status(400).json({ success: false, message: 'Código inválido' });
     }
 
-    const storedData = verificationCodes.get(email);
-    if (!storedData) {
-      return res.status(400).json({ message: 'Código no encontrado o expirado' });
-    }
-
-    if (Date.now() > storedData.expiresAt) {
+    if (Date.now() > stored.expiresAt) {
       verificationCodes.delete(email);
-      return res.status(400).json({ message: 'Código expirado' });
-    }
-
-    if (storedData.code !== code) {
-      return res.status(400).json({ message: 'Código incorrecto' });
+      return res.status(400).json({ success: false, message: 'Código expirado' });
     }
 
     verificationCodes.delete(email);
-
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
-    }
+    if (!user)
+      return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
 
     const token = jwt.sign(
       { id: user.id, role: user.role },
@@ -127,19 +93,18 @@ export const verifyCode = async (req: Request, res: Response) => {
       { expiresIn: '15m' }
     );
 
-    res.status(200).json({
-      message: 'Código verificado',
-      verified: true,
+    return res.json({
+      success: true,
       token,
-      id: user.id,
-      role: user.role,
-      name: user.name,
-      email: user.email,
-      attendances: user.attendances
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        email: user.email,
+      },
     });
-
-  } catch (error) {
-    console.error('Error en verify-code:', error);
-    res.status(500).json({ message: 'Error al verificar el código' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: 'Error del servidor' });
   }
 };
