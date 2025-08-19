@@ -23,3 +23,10 @@ model Absence {
   studentId Int
   student   User     @relation(fields: [studentId], references: [id])
 }
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  code      String
+  expiresAt DateTime
+}

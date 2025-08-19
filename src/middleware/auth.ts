@@ -1,15 +1,33 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-export const auth = (req: any, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'No autorizado' });
+interface JwtPayload {
+  id: number;
+  role: string;
+  [key: string]: any;
+}
 
+
+export const auth = (req: Request & { user?: JwtPayload }, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, message: 'No autorizado - Token no proporcionado' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
     req.user = decoded;
     next();
-  } catch {
-    res.status(401).json({ error: 'Token inválido' });
+  } catch (error) {
+    console.error('Error de autenticación:', error);
+    return res.status(401).json({ 
+      success: false, 
+      message: error instanceof jwt.TokenExpiredError 
+        ? 'Token expirado' 
+        : 'Token inválido' 
+    });
   }
 };
