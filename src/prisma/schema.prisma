@@ -25,7 +25,7 @@ model Absence {
 }
 
 model PasswordReset {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   email     String   @unique
   code      String
   expiresAt DateTime

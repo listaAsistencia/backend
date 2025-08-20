@@ -36,6 +36,7 @@ export const login = async (req: Request, res: Response) => {
       name: user.name,
       role: user.role,
       email: user.email,
+      attendances: user.attendances
     });
   } catch (err) {
     console.error(err);
