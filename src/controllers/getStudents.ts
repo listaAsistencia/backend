@@ -5,7 +5,8 @@ export const getUsers = async (req:any, res:any)=>{
     try{
         const users=  await prisma.user.findMany({
             where:{
-                role:'estudiante'
+                role:'estudiante',
+                isActive: true
             }
         });
         res.json(users);
