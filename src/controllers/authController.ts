@@ -5,17 +5,29 @@ import prisma from '../utils/db';
 import { sendMail } from '../config/mailer';
 
 const verificationCodes = new Map<string, { code: string; expiresAt: number }>();
+
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).json({ success: false, message: 'Credenciales requeridas' });
 
   try {
+
     const user = await prisma.user.findUnique({
       where: { email: email.trim().toLowerCase() },
     });
     if (!user)
       return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+
+    const isActive = await prisma.user.findUnique({
+      where: {
+        id: user.id,
+        isActive: false
+      }
+    })
+
+    if (isActive) return res.status(400)
+      .json({ message: "La cuenta se encuentra suspendida, para más información contacta a tu docente" });
 
     const validPassword = user.password.startsWith('$2')
       ? await bcrypt.compare(password, user.password)
@@ -69,7 +81,7 @@ export const sendCode = async (req: Request, res: Response) => {
 
 export const verifyCode = async (req: Request, res: Response) => {
   const { email, code } = req.body;
-  if (!email||!code)
+  if (!email || !code)
     return res.status(400).json({ success: false, message: 'Contenido faltante' });
 
   try {

@@ -4,6 +4,7 @@ import { login, verifyCode, sendCode } from '../controllers/authController';
 import { changePassword } from '../controllers/changepassword';
 import { resetPassword } from '../controllers/resetPassword';
 import { sendResetCode } from '../controllers/sendCode';
+import { suspendUser } from '../controllers/suspendUser';
 const router = express.Router();
 
 router.post('/login', login);
@@ -12,4 +13,5 @@ router.post('/verify-code', verifyCode);
 router.post('/change-password', auth, changePassword);
 router.post('/reset-password', resetPassword);
 router.post('/send-code', sendCode);
+router.patch('/suspend/:id', suspendUser);
 export default router;
