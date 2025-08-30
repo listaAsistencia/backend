@@ -29,7 +29,10 @@ export const login = async (req: Request, res: Response) => {
     if (isActive) return res.status(400)
       .json({ message: "La cuenta se encuentra suspendida, para más información contacta a tu docente" });
 
-    const validPassword = user.password == password ? true : false;
+    console.log(user.password);
+    console.log("---------")
+    console.log(password);
+    const validPassword = user.password === password ? true : false;
 
     
     if (!validPassword)
