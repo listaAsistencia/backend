@@ -8,12 +8,13 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: '*'
+  origin: process.env.FRONTEND_CLIENT
 }));
+
 app.use(express.json());
-app.use('/api/auth', authRoutes);
-app.use('/api', apiRoutes);
 app.get('/', (_req, res) => {
+app.use('/api', apiRoutes);
+app.use('/api/auth', authRoutes);
   res.send('API funcionando');
 });
 
