@@ -8,13 +8,17 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: process.env.FRONTEND_CLIENT
+  origin: ['https://portal-fusalmo.vercel.app', 'http://localhost:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
-app.get('/', (_req, res) => {
-app.use('/api', apiRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api', apiRoutes);
+
+app.get('/', (_req, res) => {
   res.send('API funcionando');
 });
 
