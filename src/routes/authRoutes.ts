@@ -12,6 +12,5 @@ router.post('/send-code', sendCode);
 router.post('/verify-code', verifyCode);
 router.post('/change-password', auth, changePassword);
 router.post('/reset-password', resetPassword);
-router.post('/send-code', sendCode);
 router.patch('/suspend/:id', suspendUser);
 export default router;
