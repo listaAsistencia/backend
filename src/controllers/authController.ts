@@ -32,7 +32,9 @@ export const login = async (req: Request, res: Response) => {
     console.log(user.password);
     console.log("---------")
     console.log(password);
-    const validPassword = user.password === password ? true : false;
+    // const validPassword = user.password === password ? true : false;
+
+    const validPassword = await bcrypt.compare(password, user.password);
 
     
     if (!validPassword)

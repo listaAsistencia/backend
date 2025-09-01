@@ -1,5 +1,6 @@
 import express from 'express';
 import { auth } from '../middleware/auth';
+import { register } from '../controllers/register';
 import { login, verifyCode, sendCode } from '../controllers/authController';
 import { changePassword } from '../controllers/changepassword';
 import { resetPassword } from '../controllers/resetPassword';
@@ -8,6 +9,7 @@ import { suspendUser } from '../controllers/suspendUser';
 const router = express.Router();
 
 router.post('/login', login);
+router.post('/register', register);
 router.post('/send-code', sendCode);
 router.post('/verify-code', verifyCode);
 router.post('/change-password', auth, changePassword);

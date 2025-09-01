@@ -5,7 +5,7 @@ export const suspendUser = async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
 
-        const deleteUser = await prisma.user.update({
+        await prisma.user.update({
             where: { id },
             data: {
                 isActive: false
